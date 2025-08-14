@@ -1,0 +1,7 @@
+streamlit==1.39.0
+pandas==1.5.3
+numpy==1.26.4
+nfl_data_py==0.3.3
+matplotlib
+Pillow
+requests
