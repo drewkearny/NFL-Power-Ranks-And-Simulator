@@ -45,15 +45,34 @@ def canon(team: str) -> str:
 def inject_brand_css():
     st.markdown("""
     <style>
-      /* gentle dark cards and brighter headers */
       .stApp { background: linear-gradient(180deg,#0f1115 0%, #0b0d12 100%); }
-      h1,h2,h3 { letter-spacing: .2px; }
-      /* compact dataframes */
+
+      /* Strong, consistent foreground — fixes 'faded' look on mobile */
+      body, .stApp, .stMarkdown, [data-testid="stMarkdownContainer"],
+      h1, h2, h3, h4, h5, h6, p, li, label, .stSidebar, .stButton>button {
+        color: #e8ecf3 !important;
+      }
+      h1, h2, h3 { letter-spacing: .2px; color: #f5f7fb !important; }
+      a { color: #8ab4ff !important; }
+
+      /* Compact dataframes */
       div[data-testid="stDataFrame"] div[role="row"] { font-size: 14px; }
-      /* buttons */
+
+      /* Buttons */
       .stButton>button {
         border-radius: 10px; padding: .5rem 1rem; font-weight: 600;
-        border: 1px solid rgba(255,255,255,.1);
+        border: 1px solid rgba(255,255,255,.08); background:#0f172a;
+      }
+
+      /* Make Streamlit columns wrap responsively (helps standings on small screens) */
+      [data-testid="stHorizontalBlock"] { flex-wrap: wrap; }
+      @media (max-width: 1100px) {
+        [data-testid="column"] { flex: 1 0 calc(50% - 12px) !important; width: calc(50% - 12px) !important; }
+      }
+      @media (max-width: 640px) {
+        [data-testid="column"] { flex: 1 0 100% !important; width: 100% !important; }
+        .block-container { padding-left: 0.8rem; padding-right: 0.8rem; }
+        h1 { font-size: 1.6rem !important; }
       }
     </style>
     """, unsafe_allow_html=True)
@@ -1057,17 +1076,12 @@ def render_bracket_tables(seeds_all: dict[str, dict[int, str]], results_df: pd.D
 <style>
   .grid-brkt {
     display: grid;
-    /* left | middle | right */
     grid-template-columns: minmax(560px,1fr) auto minmax(560px,1fr);
-    /* top spacer | SB | bottom spacer  -> SB row is always the middle */
     grid-template-rows: 1fr auto 1fr;
     column-gap: 28px;
   }
-
-  .grid-brkt .afc { grid-column: 1; grid-row: 1 / 4; justify-self: start; width: max-content;  }
-  .grid-brkt .nfc { grid-column: 3; grid-row: 1 / 4; justify-self: end; width: max-content;}
-
-  /* Super Bowl column: perfectly centered, no hardcoded pixels */
+  .grid-brkt .afc { grid-column: 1; grid-row: 1 / 4; justify-self: start; width: max-content; }
+  .grid-brkt .nfc { grid-column: 3; grid-row: 1 / 4; justify-self: end;   width: max-content; }
   .grid-brkt .sb  { grid-column: 2; grid-row: 2; place-self: center; }
 
   .brkt { border-collapse: separate; border-spacing: 14px 10px; }
@@ -1079,19 +1093,17 @@ def render_bracket_tables(seeds_all: dict[str, dict[int, str]], results_df: pd.D
   .brkt td.box { width: 280px; height: 60px; vertical-align: middle; }
   .brkt td.box.empty { background: transparent; }
   .match {
-    border: 1.5px solid #334155;
-    border-radius: 14px;
-    background: #0b1220;
-    color: #e5e7eb;
-    font-weight: 600;
-    text-align: center;
-    padding: 10px 12px;
+    border: 1.5px solid #334155; border-radius: 14px; background: #0b1220;
+    color: #e5e7eb; font-weight: 600; text-align: center; padding: 10px 12px;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     font-size: 14px; -webkit-font-smoothing: antialiased; text-rendering: geometricPrecision;
   }
   .sbtable .box { width: 280px; height: 60px; }
-  /* optional: lock the middle column to the match width for perfect centering */
   .grid-brkt .sb { width: 280px; }
+
+  /* === NEW: horizontal scroll wrapper so layout never collapses === */
+  .xscroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .xscroll .grid-brkt { min-width: 1240px; } /* 560 + 280 + 560 + gaps */
 </style>
 """, unsafe_allow_html=True
     )
@@ -1111,12 +1123,12 @@ def render_bracket_tables(seeds_all: dict[str, dict[int, str]], results_df: pd.D
     # --- Layout: AFC | SB | NFC  (no leading spaces in HTML) ---------------
     st.markdown(
         (
-            f"<div class=\"grid-brkt\">"
+            f"<div class=\"xscroll\">"                              # NEW wrapper
+            f"<div class=\"grid-brkt\">"                           # existing grid
             f"<div class=\"afc\">"
             f"<h4 style=\"margin:0 0 6px\">AFC</h4>"
             f"{afc_html}"
             f"</div>"
-
             f"<div class=\"sb\">"
             f"<table class=\"brkt sbtable\">"
             f"<thead><tr><th>SUPER BOWL</th></tr></thead>"
@@ -1124,9 +1136,7 @@ def render_bracket_tables(seeds_all: dict[str, dict[int, str]], results_df: pd.D
             f"<div class=\"match\" style=\"border-color:#94a3b8\">{sb_match_label}</div>"
             f"</td></tr></tbody>"
             f"</table>"
-
             f"<div style=\"height:10px\"></div>"
-
             f"<table class=\"brkt sbtable\">"
             f"<thead><tr><th>CHAMPIONS</th></tr></thead>"
             f"<tbody><tr><td class=\"box\">"
@@ -1134,12 +1144,12 @@ def render_bracket_tables(seeds_all: dict[str, dict[int, str]], results_df: pd.D
             f"</td></tr></tbody>"
             f"</table>"
             f"</div>"
-
             f"<div class=\"nfc\">"
             f"<h4 style=\"margin:0 0 6px\">NFC</h4>"
             f"{nfc_html}"
             f"</div>"
-            f"</div>"
+            f"</div>"                                             # end .grid-brkt
+            f"</div>"                                             # end .xscroll
         ),
         unsafe_allow_html=True,
     )
@@ -1412,35 +1422,35 @@ elif page == "2025 Season Simulator":
         with st.form(f"week_{week}_form", clear_on_submit=False):
             for i, row in wk_games.iterrows():
                 home = canon(row["home_team"]); away = canon(row["away_team"])
-
                 neutral = bool(row.get("neutral_site", 0))
 
-                # default choice (favorites) if nothing saved yet
+                # decide default winner using Elo favorite
                 default_home = favorite_is_home(row)
-                pre_value = st.session_state.get(f"pick_{week}_{i}", home if default_home else away)
-                init_index = 0 if pre_value == home else 1
 
-                # lay out radio + slider side-by-side
+                # keys for this game
+                pick_key = f"pick_{week}_{i}"
+                mov_key  = f"mov_{week}_{i}"
+
+                # set defaults ONCE in session_state
+                st.session_state.setdefault(pick_key, home if default_home else away)
+                st.session_state.setdefault(mov_key, 3)
+
+                # UI (read from session_state via key only — no 'value' or 'index')
                 c_pick, c_mov = st.columns([3, 2])
 
                 with c_pick:
                     st.radio(
                         f"{away} @ {home}{' (Neutral)' if neutral else ''}",
-                        options=[home, away],           # show team codes instead of "Home/Away"
-                        index=init_index,
-                        key=f"pick_{week}_{i}",
-                        horizontal=True
+                        options=[home, away],
+                        key=pick_key,
+                        horizontal=True,
                     )
 
                 with c_mov:
-                    # default MOV = 3; key per game/week; 0 means tie (radio choice ignored)
-                    mov_key = f"mov_{week}_{i}"
-                    if mov_key not in st.session_state:
-                        st.session_state[mov_key] = 3
                     st.slider(
                         "Margin of Victory",
-                        min_value=0, max_value=70, step=1, value=st.session_state[mov_key],
-                        key=mov_key
+                        min_value=0, max_value=70, step=1,
+                        key=mov_key,
                     )
 
             submit = st.form_submit_button("Simulate Week")
