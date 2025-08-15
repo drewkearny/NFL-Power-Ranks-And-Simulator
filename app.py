@@ -45,34 +45,43 @@ def canon(team: str) -> str:
 def inject_brand_css():
     st.markdown("""
     <style>
+      /* Base background */
       .stApp { background: linear-gradient(180deg,#0f1115 0%, #0b0d12 100%); }
 
-      /* Strong, consistent foreground — fixes 'faded' look on mobile */
-      body, .stApp, .stMarkdown, [data-testid="stMarkdownContainer"],
-      h1, h2, h3, h4, h5, h6, p, li, label, .stSidebar, .stButton>button {
-        color: #e8ecf3 !important;
+      /* Force strong, non-faded text everywhere */
+      [data-testid="stAppViewContainer"], .stMarkdown, .stMarkdown p, .stMarkdown li,
+      .stMarkdown ul, .stMarkdown ol, .stMarkdown blockquote {
+        color: #e6eaf0 !important;
+        opacity: 1 !important;
+        -webkit-text-fill-color: #e6eaf0 !important; /* iOS */
       }
-      h1, h2, h3 { letter-spacing: .2px; color: #f5f7fb !important; }
-      a { color: #8ab4ff !important; }
+      h1, h2, h3, h4 {
+        color: #ffffff !important;
+        opacity: 1 !important;
+        -webkit-text-fill-color: #ffffff !important; /* iOS */
+        letter-spacing: .2px;
+      }
 
-      /* Compact dataframes */
+      /* Streamlit header/sidebar transparency tweaks */
+      [data-testid="stHeader"] { background: transparent !important; backdrop-filter: none !important; }
+      [data-testid="stSidebar"] { background: #0d1117 !important; }
+
+      /* Dataframes slightly tighter */
       div[data-testid="stDataFrame"] div[role="row"] { font-size: 14px; }
 
       /* Buttons */
       .stButton>button {
         border-radius: 10px; padding: .5rem 1rem; font-weight: 600;
-        border: 1px solid rgba(255,255,255,.08); background:#0f172a;
+        border: 1px solid rgba(255,255,255,.10); color:#e6eaf0;
       }
 
-      /* Make Streamlit columns wrap responsively (helps standings on small screens) */
-      [data-testid="stHorizontalBlock"] { flex-wrap: wrap; }
-      @media (max-width: 1100px) {
-        [data-testid="column"] { flex: 1 0 calc(50% - 12px) !important; width: calc(50% - 12px) !important; }
-      }
-      @media (max-width: 640px) {
-        [data-testid="column"] { flex: 1 0 100% !important; width: 100% !important; }
-        .block-container { padding-left: 0.8rem; padding-right: 0.8rem; }
-        h1 { font-size: 1.6rem !important; }
+      /* iPhone/small screens: remove any chance of dim/overlay feel */
+      @media (max-width: 768px) {
+        .stApp, [data-testid="stAppViewContainer"], .stMarkdown, h1,h2,h3,h4,p,li {
+          filter: none !important;
+          opacity: 1 !important;
+        }
+        .block-container { padding: 1rem .75rem !important; }
       }
     </style>
     """, unsafe_allow_html=True)
